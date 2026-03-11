@@ -1,9 +1,10 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get, UnauthorizedException, UseGuards } from '@nestjs/common';
 import { ReportsService } from './reports.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../../common/guards/permissions.guard';
 import { CurrentUser, RequirePermissions } from '../../common/decorators';
 import { PermissionAtom } from '../../common/enums/permission.enum';
+import { AuthenticatedUser } from 'src/common/interfaces/jwt-payload.interface';
 
 
 @Controller('reports')
@@ -13,7 +14,10 @@ export class ReportsController {
 
   @Get('summary')
   @RequirePermissions(PermissionAtom.REPORTS_VIEW)
-  getSummary(@CurrentUser() user: any) {
-    return this.reportsService.getSummary(user);
+  async getSummary(@CurrentUser() user: AuthenticatedUser | null) {                        
+  if (!user) {
+    throw new UnauthorizedException('No authenticated user found');
   }
+  return this.reportsService.getSummary(user);
+}
 }

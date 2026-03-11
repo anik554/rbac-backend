@@ -1,56 +1,102 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+
 import { Lead, LeadStatus } from '../../entities/lead.entity';
 import { Task, TaskStatus } from '../../entities/task.entity';
 import { User } from '../../entities/user.entity';
+
 import { AuthenticatedUser } from '../../common/interfaces/jwt-payload.interface';
-import { RoleType } from '../../common/enums/role.enum';
+
+
+interface StatusCount {
+  status: string;
+  count: string;
+}
+
+interface TopAgent {
+  agentId: string;
+  firstName: string;
+  lastName: string;
+  leadsCount: string;
+}
 
 @Injectable()
 export class ReportsService {
   constructor(
-    @InjectRepository(Lead) private leadRepo: Repository<Lead>,
-    @InjectRepository(Task) private taskRepo: Repository<Task>,
-    @InjectRepository(User) private userRepo: Repository<User>,
+    @InjectRepository(Lead)
+    private readonly leadRepo: Repository<Lead>,
+
+    @InjectRepository(Task)
+    private readonly taskRepo: Repository<Task>,
+
+    @InjectRepository(User)
+    private readonly userRepo: Repository<User>,
   ) {}
 
   async getSummary(requestor: AuthenticatedUser) {
-    const isAdmin = requestor.role === RoleType.ADMIN;
+    if (!requestor?.id || !requestor?.role) {
+      throw new ForbiddenException('Invalid authenticated user');
+    }
 
-    // Leads by status
+
+
     const leadsByStatus = await this.leadRepo
       .createQueryBuilder('l')
       .select('l.status', 'status')
       .addSelect('COUNT(*)', 'count')
       .groupBy('l.status')
-      .getRawMany();
+      .getRawMany<StatusCount>();
 
-    // Tasks by status
     const tasksByStatus = await this.taskRepo
       .createQueryBuilder('t')
       .select('t.status', 'status')
       .addSelect('COUNT(*)', 'count')
       .groupBy('t.status')
-      .getRawMany();
+      .getRawMany<StatusCount>();
 
-    // Top agents by leads assigned
-    const topAgents = await this.leadRepo
+    const topAgentsQuery = this.leadRepo
       .createQueryBuilder('l')
       .leftJoin('l.assignedTo', 'agent')
-      .select('agent.id', 'agentId')
-      .addSelect('agent.firstName', 'firstName')
-      .addSelect('agent.lastName', 'lastName')
-      .addSelect('COUNT(*)', 'leadsCount')
+      .where('agent.id IS NOT NULL') 
+      .select([
+        'agent.id AS "agentId"',
+        'agent.firstName AS "firstName"',
+        'agent.lastName AS "lastName"',
+        'COUNT(l.id) AS "leadsCount"',
+      ])
       .groupBy('agent.id, agent.firstName, agent.lastName')
-      .orderBy('leadsCount', 'DESC')
-      .limit(10)
-      .getRawMany();
+      .orderBy('"leadsCount"', 'DESC')
+      .limit(10);
+
+    const topAgents = await topAgentsQuery.getRawMany<TopAgent>();
+
+    const formattedTopAgents = topAgents.map(agent => ({
+      ...agent,
+      leadsCount: Number(agent.leadsCount),
+    }));
 
     return {
-      leads: { byStatus: leadsByStatus },
-      tasks: { byStatus: tasksByStatus },
-      topAgents,
+      success: true,
+      data: {
+        leads: {
+          byStatus: leadsByStatus.map(item => ({
+            status: item.status ?? 'unknown',
+            count: Number(item.count),
+          })),
+        },
+        tasks: {
+          byStatus: tasksByStatus.map(item => ({
+            status: item.status ?? 'unknown',
+            count: Number(item.count),
+          })),
+        },
+        topAgents: formattedTopAgents,
+      },
+      meta: {
+        generatedAt: new Date().toISOString(),
+        requestedByRole: requestor.role,
+      },
     };
   }
 }
