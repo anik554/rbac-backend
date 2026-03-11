@@ -1,14 +1,15 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
-import { AuditFilterDto, AuditService } from './audit.service';
+import { AuditService } from './audit.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../common/guards/permissions.guard';
 import { RequirePermissions } from '../common/decorators';
 import { PermissionAtom } from '../common/enums/permission.enum';
+import { AuditFilterDto } from './dto/audit-filter.dto';
 
 @Controller('audit')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
 export class AuditController {
-  constructor(private auditService: AuditService) {}
+  constructor(private auditService: AuditService) { }
 
   /** GET /audit — paginated, filterable audit log */
   @Get()
