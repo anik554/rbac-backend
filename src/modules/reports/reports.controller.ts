@@ -10,14 +10,14 @@ import { AuthenticatedUser } from 'src/common/interfaces/jwt-payload.interface';
 @Controller('reports')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
 export class ReportsController {
-  constructor(private reportsService: ReportsService) {}
+  constructor(private reportsService: ReportsService) { }
 
   @Get('summary')
   @RequirePermissions(PermissionAtom.REPORTS_VIEW)
-  async getSummary(@CurrentUser() user: AuthenticatedUser | null) {                        
-  if (!user) {
-    throw new UnauthorizedException('No authenticated user found');
+  async getSummary(@CurrentUser() user: AuthenticatedUser | null) {
+    if (!user) {
+      throw new UnauthorizedException('No authenticated user found');
+    }
+    return this.reportsService.getSummary(user);
   }
-  return this.reportsService.getSummary(user);
-}
 }
