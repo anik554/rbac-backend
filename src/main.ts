@@ -1,6 +1,5 @@
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory, Reflector } from '@nestjs/core';
-import cookieParser = require('cookie-parser');
 import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
@@ -8,9 +7,11 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { PermissionsGuard } from './common/guards/permissions.guard';
 import { seedDatabase } from './database/seeder';
 import { DataSource } from 'typeorm';
+import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  await app.listen(process.env.PORT ?? 3001);
 
   app.setGlobalPrefix('api/v1');
 
@@ -32,7 +33,10 @@ async function bootstrap() {
   );
 
   const reflector = app.get(Reflector);
-  app.useGlobalGuards(new JwtAuthGuard(reflector), new PermissionsGuard(reflector));
+  app.useGlobalGuards(
+    new JwtAuthGuard(reflector),
+    new PermissionsGuard(reflector),
+  );
   app.useGlobalFilters(new GlobalExceptionFilter());
   app.useGlobalInterceptors(new ResponseInterceptor());
 
@@ -44,4 +48,4 @@ async function bootstrap() {
   console.log(`🚀 RBAC Backend running on http://localhost:${port}/api/v1`);
 }
 
-bootstrap();
+void bootstrap();
