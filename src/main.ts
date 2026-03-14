@@ -26,7 +26,7 @@ async function bootstrap() {
     new ExpressAdapter(expressApp),
   );
 
-  app.setGlobalPrefix('api/v1');
+  // app.setGlobalPrefix('api/v1');
 
   app.enableCors({
     origin: process.env.FRONTEND_URL || 'http://localhost:3001',
