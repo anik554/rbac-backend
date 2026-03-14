@@ -1,10 +1,13 @@
 [build]
-  command = "npm run build"
-  publish = "dist"
+  command = "npx tsc -p tsconfig.netlify.json && npm run build"
+  publish = "public"
   functions = "netlify/functions"
 
+[functions]
+  node_bundler = "esbuild"
+  external_node_modules = ["reflect-metadata", "typeorm", "pg"]
+
 [[redirects]]
-  from = "/api/v1/*"
-  to = "/.netlify/functions/server/:splat"
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
   status = 200
-  force = true
