@@ -3,7 +3,8 @@
   "compilerOptions": {
     "rootDir": "./",
     "outDir": "./dist",
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "declaration": false      // ← prevents .d.ts generation in netlify/functions
   },
   "include": ["src/**/*", "netlify/**/*"],
   "exclude": [

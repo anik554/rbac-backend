@@ -6,6 +6,10 @@
 [functions]
   node_bundler = "esbuild"
   included_files = ["dist/**"]
+  ignored_node_modules = []
+
+[functions."api.d"]
+  included_files = []
 
 [functions."*"]
   external_node_modules = [
