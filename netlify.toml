@@ -6,10 +6,6 @@
 [functions]
   node_bundler = "esbuild"
   included_files = ["dist/**"]
-  ignored_node_modules = []
-
-[functions."api.d"]
-  included_files = []
 
 [functions."*"]
   external_node_modules = [
@@ -33,7 +29,9 @@
     "passport-jwt"
   ]
 
+# Redirect ALL requests to the api function
 [[redirects]]
-  from = "/api/*"
+  from = "/*"
   to = "/.netlify/functions/api/:splat"
   status = 200
+  force = true
