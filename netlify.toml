@@ -1,11 +1,33 @@
 [build]
-  command = "npx tsc -p tsconfig.netlify.json && npm run build"
+  command = "npm run build"
   publish = "public"
   functions = "netlify/functions"
 
 [functions]
   node_bundler = "esbuild"
-  external_node_modules = ["reflect-metadata", "typeorm", "pg"]
+  included_files = ["dist/**"]
+
+[functions."*"]
+  external_node_modules = [
+    "express",
+    "@nestjs/core",
+    "@nestjs/common",
+    "@nestjs/platform-express",
+    "@nestjs/microservices",
+    "@nestjs/websockets",
+    "@nestjs/typeorm",
+    "typeorm",
+    "reflect-metadata",
+    "pg",
+    "cookie-parser",
+    "serverless-http",
+    "class-transformer",
+    "class-validator",
+    "@nestjs/jwt",
+    "@nestjs/passport",
+    "passport",
+    "passport-jwt"
+  ]
 
 [[redirects]]
   from = "/api/*"
