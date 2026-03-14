@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 import 'reflect-metadata';
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory, Reflector } from '@nestjs/core';
@@ -10,8 +12,19 @@ import { seedDatabase } from './database/seeder';
 import { DataSource } from 'typeorm';
 import cookieParser from 'cookie-parser';
 
+import express from 'express';
+import serverless from 'serverless-http';
+import { ExpressAdapter } from '@nestjs/platform-express';
+
+let server: any;
+
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const expressApp = express();
+
+  const app = await NestFactory.create(
+    AppModule,
+    new ExpressAdapter(expressApp),
+  );
 
   app.setGlobalPrefix('api/v1');
 
@@ -33,14 +46,19 @@ async function bootstrap() {
   );
 
   const reflector = app.get(Reflector);
+
   app.useGlobalGuards(
     new JwtAuthGuard(reflector),
     new PermissionsGuard(reflector),
   );
+
   app.useGlobalFilters(new GlobalExceptionFilter());
   app.useGlobalInterceptors(new ResponseInterceptor());
+
   await app.init();
+
   const dataSource = app.get(DataSource);
+
   try {
     await seedDatabase(dataSource);
     console.log('Database seeded (cold start)');
@@ -48,8 +66,13 @@ async function bootstrap() {
     console.error('Seeding failed on cold start:', err);
   }
 
-  const port = process.env.PORT || 3000;
-  await app.listen(port);
-  console.log(`🚀 RBAC Backend running on http://localhost:${port}/api/v1`);
+  return serverless(expressApp);
 }
-void bootstrap();
+
+export const handler = async (event: any, context: any) => {
+  if (!server) {
+    server = await bootstrap();
+  }
+
+  return server(event, context);
+};
