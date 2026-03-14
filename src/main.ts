@@ -10,7 +10,12 @@ import { seedDatabase } from './database/seeder';
 import { DataSource } from 'typeorm';
 import cookieParser from 'cookie-parser';
 
+let cachedServer: any;
+
 async function bootstrap() {
+  if (cachedServer) {
+    return cachedServer;
+  }
   const app = await NestFactory.create(AppModule);
 
   app.setGlobalPrefix('api/v1');
@@ -39,13 +44,30 @@ async function bootstrap() {
   );
   app.useGlobalFilters(new GlobalExceptionFilter());
   app.useGlobalInterceptors(new ResponseInterceptor());
-
+  await app.init();
   const dataSource = app.get(DataSource);
-  await seedDatabase(dataSource);
+  try {
+    await seedDatabase(dataSource);
+    console.log('Database seeded (cold start)');
+  } catch (err) {
+    console.error('Seeding failed on cold start:', err);
+  }
+
+
 
   const port = process.env.PORT || 3000;
   await app.listen(port);
   console.log(`🚀 RBAC Backend running on http://localhost:${port}/api/v1`);
+
+  const expressApp = app.getHttpAdapter().getInstance();
+  cachedServer = serverless(expressApp);
+  return cachedServer;
 }
+
+export const handler = async (event: any, context: any) => {
+  const server = await bootstrapServer();
+  // Forward the request to NestJS
+  return server(event, context);
+};
 
 void bootstrap();
