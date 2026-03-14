@@ -4,7 +4,6 @@ import { Role } from '../entities/role.entity';
 import { Permission } from '../entities/permission.entity';
 import { User } from '../entities/user.entity';
 import { RoleType } from '../common/enums/role.enum';
-import { UserStatus } from '../entities/user.entity';
 import { PermissionAtom } from '../common/enums/permission.enum';
 
 export async function seedDatabase(dataSource: DataSource) {
@@ -39,10 +38,14 @@ export async function seedDatabase(dataSource: DataSource) {
 
   // 3. Create default admin
   const adminEmail = 'admin@rbac.com';
-  const existingAdmin = await userRepo.findOne({ where: { email: adminEmail } });
+  const existingAdmin = await userRepo.findOne({
+    where: { email: adminEmail },
+  });
 
   if (!existingAdmin) {
-    const adminRole = await roleRepo.findOne({ where: { name: RoleType.ADMIN } });
+    const adminRole = await roleRepo.findOne({
+      where: { name: RoleType.ADMIN },
+    });
     if (!adminRole) throw new Error('Admin role not found');
     const allPerms = await permRepo.find();
 
